@@ -8,6 +8,7 @@ from sklearn.ensemble import RandomForestClassifier
 from ydata_profiling import ProfileReport
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from lazypredict.Supervised import LazyClassifier
 from sklearn.model_selection import GridSearchCV
@@ -52,8 +53,8 @@ X_train, X_test, y_train, y_test = train_test_split(x, y, test_size = 0.4, rando
 
 
 # data preprocessing
-X_train = preprocessing.fit_transform(X_train)
-X_test = preprocessing.transform(X_test)
+# X_train = preprocessing.fit_transform(X_train)
+# X_test = preprocessing.transform(X_test)
 
 
 # #training all model -> filter top 5 model have most performance
@@ -63,13 +64,17 @@ models,predictions = clf.fit(X_train, X_test, y_train, y_test)
 
 # grid_search
 #model logistic regression
+cls = Pipeline(steps=[
+    ('preprocessing', preprocessing),
+    ('LogisticRegression', LogisticRegression(random_state = 42)),
+])
 param_grid_model_1 = {
-    'penalty':['l1','l2', 'elasticnet'],
-    'C' : [0.01, 0.1, 1, 10, 100],
+    'LogisticRegression__penalty':['l2', 'elasticnet', None],
+    'LogisticRegression__C' : [0.01, 0.1, 1, 10, 100],
 }
-grid_search_model_1 = GridSearchCV(estimator=LogisticRegression(random_state = 42), param_grid = param_grid_model_1,cv = 5, verbose = 2)
+grid_search_model_1 = GridSearchCV(estimator=cls, param_grid = param_grid_model_1,cv = 5, verbose = 2)
 grid_search_model_1.fit(X_train, y_train)
-# print(classification_report(y_test, grid_search_model_1.predict(X_test)))
+print(classification_report(y_test, grid_search_model_1.predict(X_test)))
 
 """
               precision    recall  f1-score   support
@@ -85,17 +90,21 @@ weighted avg       0.66      0.71      0.68       454
 """
 
 #model Linear SVC
+cls = Pipeline(steps=[
+    ('preprocessing', preprocessing),
+    ('LinearSVC', LinearSVC(random_state = 42)),
+])
 param_grid_model_2 = {
-    'penalty':['l1','l2'],
-    'loss': ['hinge', 'squared_hinge'],
-    'C' : [0.01, 0.1, 1, 10, 100],
-    'class_weight' : ['balanced']
+    'LinearSVC__penalty':['l2'],
+    'LinearSVC__loss': ['hinge', 'squared_hinge'],
+    'LinearSVC__C' : [0.01, 0.1, 1, 10, 100],
+    'LinearSVC__class_weight' : ['balanced']
 }
-grid_search_model_2 = GridSearchCV(estimator= LinearSVC(random_state=42), param_grid = param_grid_model_2, cv = 5, verbose = 2)
+grid_search_model_2 = GridSearchCV(estimator= cls, param_grid = param_grid_model_2, cv = 5, verbose = 2)
 grid_search_model_2.fit(X_train, y_train)
 
 #danh gia model Linear SVC
-# print(classification_report(y_test, grid_search_model_2.predict(X_test)))
+print(classification_report(y_test, grid_search_model_2.predict(X_test)))
 
 """
               precision    recall  f1-score   support
@@ -110,17 +119,21 @@ weighted avg       0.70      0.67      0.68       454
 """
 
 # model RandomForestClassifier
+cls = Pipeline(steps=[
+    ('preprocessing', preprocessing),
+    ('RandomForestClassifier', RandomForestClassifier(random_state = 42)),
+])
 param_grid_model_3 = {
-    'criterion':['gini','entropy', 'log_loss'],
-    'max_depth': [15, 20, 30],
-    'class_weight' : ['balanced'],
+    'RandomForestClassifier__criterion':['gini','entropy', 'log_loss'],
+    'RandomForestClassifier__max_depth': [15, 20, 30],
+    'RandomForestClassifier__class_weight' : ['balanced'],
 }
 
-grid_search_model_3 = GridSearchCV(estimator=RandomForestClassifier(random_state=42), param_grid = param_grid_model_3, cv = 5, verbose = 2)
+grid_search_model_3 = GridSearchCV(estimator=cls, param_grid = param_grid_model_3, cv = 5, verbose = 2)
 grid_search_model_3.fit(X_train, y_train)
 
 #danh gia mo hinh RandomForestClassifier
-# print(classification_report(y_test, grid_search_model_3.predict(X_test)))
+print(classification_report(y_test, grid_search_model_3.predict(X_test)))
 """
               precision    recall  f1-score   support
 
@@ -134,15 +147,19 @@ weighted avg       0.70      0.72      0.70       454
 """
 
 # model Calibrated Classifier CV
+cls = Pipeline(steps=[
+    ('preprocessing', preprocessing),
+    ('CalibratedClassifierCV', CalibratedClassifierCV())
+])
 param_grid_model_4 = {
-    'method': ['sigmoid','isotonic'],
-    'n_jobs': [-1]
+    'CalibratedClassifierCV__method': ['sigmoid','isotonic'],
+    'CalibratedClassifierCV__n_jobs': [-1]
 }
-grid_search_model_4 = GridSearchCV(estimator=CalibratedClassifierCV(), param_grid = param_grid_model_4, cv = 5, verbose = 2)
+grid_search_model_4 = GridSearchCV(estimator=cls, param_grid = param_grid_model_4, cv = 5, verbose = 2)
 grid_search_model_4.fit(X_train, y_train)
 
 # danh gia mo hinh Calibrated Classifier CV
-# print(classification_report(y_test,grid_search_model_4.predict(X_test)))
+print(classification_report(y_test,grid_search_model_4.predict(X_test)))
 
 """
               precision    recall  f1-score   support
@@ -158,17 +175,21 @@ weighted avg       0.66      0.72      0.69       454
 """
 
 #model ExtraTrees Classifier
+cls = Pipeline(steps=[
+    ('preprocessing', preprocessing),
+    ('ExtraTreesClassifier', ExtraTreesClassifier(random_state = 42)),
+])
 param_grid_model_5 = {
-    'criterion':['gini','entropy', 'log_loss'],
-    'max_depth': [15, 20, 30],
-    'class_weight' : ['balanced'],
-    'max_features' : ['sqrt', 'log2']
+    'ExtraTreesClassifier__criterion':['gini','entropy', 'log_loss'],
+    'ExtraTreesClassifier__max_depth': [15, 20, 30],
+    'ExtraTreesClassifier__class_weight' : ['balanced'],
+    'ExtraTreesClassifier__max_features' : ['sqrt', 'log2']
 }
-grid_search_model_5 = GridSearchCV(estimator=ExtraTreesClassifier(random_state=42), param_grid = param_grid_model_5, cv = 5, verbose = 2)
+grid_search_model_5 = GridSearchCV(estimator=cls, param_grid = param_grid_model_5, cv = 5, verbose = 2)
 grid_search_model_5.fit(X_train, y_train)
 
 #danh gia model ExtraTreesClassifier
-# print(classification_report(y_test,grid_search_model_5.predict(X_test)))
+print(classification_report(y_test,grid_search_model_5.predict(X_test)))
 
 """
               precision    recall  f1-score   support
